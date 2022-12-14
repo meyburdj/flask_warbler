@@ -345,6 +345,37 @@ def delete_message(message_id):
 
     return redirect(f"/users/{g.user.id}")
 
+@app.post('/messages/<int:message_id>/like')
+def like_message(message_id):
+    """ like message by user """
+
+    if not g.user:
+        flash("access unauthorized.", "danger")
+        return redirect("/")
+
+    msg = Message.query.get_or_404(message_id)
+
+    msg.likers.append(g.user)
+
+    db.session.commit()
+
+    return redirect(f"/messages/{message_id}")
+
+@app.post('/messages/<int:message_id>/unlike')
+def unlike_message(message_id):
+    """ unlike message by user """
+
+    if not g.user:
+        flash("access unauthorized.", "danger")
+        return redirect("/")
+
+    msg = Message.query.get_or_404(message_id)
+ 
+    msg.likers.remove(g.user)
+
+    db.session.commit()
+
+    return redirect(f"/messages/{message_id}")
 
 ##############################################################################
 # Homepage and error pages
