@@ -25,6 +25,7 @@ app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
+db.create_all()
 
 
 ##############################################################################
@@ -257,6 +258,7 @@ def profile():
             user.image_url = form.image_url.data
             user.header_image_url = form.header_image_url.data
             user.bio = form.bio.data
+            user.location = form.location.data
 
             db.session.add(user)
             db.session.commit()
@@ -355,7 +357,7 @@ def homepage():
     - anon users: no messages
     - logged in: 100 most recent messages of followed_users
     """
-    
+
     if g.user:
         users = g.user.following + [g.user]
         user_ids = [user.id for user in users]
@@ -365,7 +367,6 @@ def homepage():
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
-        
 
         return render_template('home.html', messages=messages)
 
