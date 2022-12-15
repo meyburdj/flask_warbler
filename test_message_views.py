@@ -43,6 +43,7 @@ app.config['WTF_CSRF_ENABLED'] = False
 
 class MessageBaseViewTestCase(TestCase):
     def setUp(self):
+        """ Set up for tests """
         User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
@@ -56,6 +57,10 @@ class MessageBaseViewTestCase(TestCase):
         self.m1_id = m1.id
 
         self.client = app.test_client()
+
+    def tearDown(self):
+        """ Clean up after test """
+        db.session.rollback()
 
 
 class MessageAddViewTestCase(MessageBaseViewTestCase):
@@ -112,4 +117,22 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('<p class="single-message">m1-text</p>', html)
 
-    
+
+    def test_delete_message(self):
+        """ Test deletion of user's own message """
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.post(
+                f'/messages/{self.m1_id}/delete',
+                follow_redirects=True
+            )
+
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Message successfully deleted', html)
+            self.assertIn('Here is the user profile page', html)
+
+            self.assertIsNone(Message.query.get(self.m1_id))

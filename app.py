@@ -368,11 +368,19 @@ def delete_message(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get_or_404(message_id)
-    db.session.delete(msg)
-    db.session.commit()
+    form = g.csrf_form
 
-    return redirect(f"/users/{g.user.id}")
+    if form.validate_on_submit():
+        msg = Message.query.get_or_404(message_id)
+
+        if g.user.id == msg.user_id:
+            db.session.delete(msg)
+            db.session.commit()
+
+            flash('Message successfully deleted.', 'success')
+            return redirect(f"/users/{g.user.id}")
+
+    return redirect(f'/message/{message_id}')
 
 @app.post('/messages/<int:message_id>/like')
 def like_message(message_id):
