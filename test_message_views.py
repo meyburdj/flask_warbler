@@ -60,8 +60,7 @@ class MessageBaseViewTestCase(TestCase):
 
 class MessageAddViewTestCase(MessageBaseViewTestCase):
     def test_add_message(self):
-        # Since we need to change the session to mimic logging in,
-        # we need to use the changing-session trick:
+        """ Tests that when a user submits a new message while authorized, that the data is sent and that a redirect occurs """
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
@@ -73,3 +72,44 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 302)
 
             Message.query.filter_by(text="Hello").one()
+
+    def test_add_message_page(self):
+        """ Tests the messages/new page to display form if logged in """
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.get("/messages/new")
+
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+
+            self.assertIn('<button class="btn btn-outline-success">Add my message!</button>', html)
+
+    def test_add_message_page_wo_auth(self):
+        """ Tests the redirect if user tries to get the messages/new route without authorization """
+        with self.client as c:
+
+            resp = c.get("/messages/new", follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
+            self.assertIn("Access unauthorized.", html)
+
+    def test_show_message(self):
+        """ Tests the messages/<message_id> route to display message if logged in """
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.get(f"/messages/{self.m1_id}")
+
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<p class="single-message">m1-text</p>', html)
+
+    
