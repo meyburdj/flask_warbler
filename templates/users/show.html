@@ -22,8 +22,7 @@
         <p>{{ message.text }}</p>
         {% if g.user and g.user.id != message.user.id%}
         <form method='POST'>
-          {{ g.csrf_form.hidden_tag() }}
-          <input name='redirect-location' type='hidden' value='/users/{{ user.id }}'>
+          {{ g.redirect_form.hidden_tag() }}
           {% if g.user in message.likers %}
           <button formaction='/messages/{{ message.id }}/unlike' class='btn'>
             <i class='bi bi-star-fill'></i>

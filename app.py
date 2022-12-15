@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm, CSRFProtectForm, UpdateUserForm
+from forms import UserAddForm, LoginForm, MessageForm, CSRFProtectForm, UpdateUserForm, RedirectForm
 from models import db, connect_db, User, Message
 
 load_dotenv()
@@ -47,6 +47,13 @@ def add_csrf_form_to_all_pages():
     """Before every route, add CSRF-only form to global object."""
 
     g.csrf_form = CSRFProtectForm()
+
+@app.before_request
+def add_redirect_form_to_all_pages():
+    """ Before every route, add a hidden form that will 
+    have that routes location for the sake of redirects """
+
+    g.redirect_form = RedirectForm()
 
 
 def do_login(user):
@@ -170,6 +177,7 @@ def show_user(user_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
+    g.redirect_form.redirect_location.data = f'/users/{user_id}'
     user = User.query.get_or_404(user_id)
 
     return render_template('users/show.html', user=user)
@@ -296,6 +304,7 @@ def show_liked_messages(user_id):
     user = User.query.get_or_404(user_id)
 
     return render_template('home.html', messages=user.liked_messages)
+    # TODO: make a new template for this specifically
 
 
 ##############################################################################
@@ -332,6 +341,7 @@ def show_message(message_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
+    g.redirect_form.redirect_location.data = f'/messages/{message_id}'
     msg = Message.query.get_or_404(message_id)
     return render_template('messages/show.html', message=msg)
 
@@ -362,14 +372,14 @@ def like_message(message_id):
         flash("access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    form = g.redirect_form
 
     if form.validate_on_submit():
         msg = Message.query.get_or_404(message_id)
         msg.likers.append(g.user)
         db.session.commit()
 
-    return redirect(request.form['redirect-location'])
+    return redirect(form.redirect_location.data)
 
 @app.post('/messages/<int:message_id>/unlike')
 def unlike_message(message_id):
@@ -379,14 +389,15 @@ def unlike_message(message_id):
         flash("access unauthorized.", "danger")
         return redirect("/")
 
-    form = g.csrf_form
+    form = g.redirect_form
 
     if form.validate_on_submit():
         msg = Message.query.get_or_404(message_id)
         msg.likers.remove(g.user)
         db.session.commit()
 
-    return redirect(request.form['redirect-location'])
+    return redirect(form.redirect_location.data) 
+    
 
 ##############################################################################
 # Homepage and error pages
@@ -401,6 +412,8 @@ def homepage():
     """
 
     if g.user:
+        g.redirect_form.redirect_location.data = '/'
+
         users = g.user.following + [g.user]
         user_ids = [user.id for user in users]
         messages = (Message

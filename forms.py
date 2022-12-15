@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField
+from wtforms import StringField, PasswordField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, Email, Length
 
 
@@ -35,6 +35,11 @@ class UpdateUserForm(FlaskForm):
     bio = TextAreaField('(Optional) Bio')
     location = StringField('(Optional) Location')
     password = PasswordField('Password', validators=[Length(min=6)])
+
+class RedirectForm(FlaskForm):
+    """ Redirects with validation """
+
+    redirect_location = HiddenField('redirect_location', validators=[DataRequired()])
 
 
 class CSRFProtectForm(FlaskForm):
