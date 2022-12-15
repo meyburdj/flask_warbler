@@ -289,6 +289,15 @@ def delete_user():
     return redirect("/signup")
 
 
+@app.get('/users/<int:user_id>/likes')
+def show_liked_messages(user_id):
+    """ Show liked messages of user """
+
+    user = User.query.get_or_404(user_id)
+
+    return render_template('home.html', messages=user.liked_messages)
+
+
 ##############################################################################
 # Messages routes:
 
@@ -353,13 +362,14 @@ def like_message(message_id):
         flash("access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get_or_404(message_id)
+    form = g.csrf_form
 
-    msg.likers.append(g.user)
+    if form.validate_on_submit():
+        msg = Message.query.get_or_404(message_id)
+        msg.likers.append(g.user)
+        db.session.commit()
 
-    db.session.commit()
-
-    return redirect(f"/messages/{message_id}")
+    return redirect(request.form['redirect-location'])
 
 @app.post('/messages/<int:message_id>/unlike')
 def unlike_message(message_id):
@@ -369,13 +379,14 @@ def unlike_message(message_id):
         flash("access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get_or_404(message_id)
- 
-    msg.likers.remove(g.user)
+    form = g.csrf_form
 
-    db.session.commit()
+    if form.validate_on_submit():
+        msg = Message.query.get_or_404(message_id)
+        msg.likers.remove(g.user)
+        db.session.commit()
 
-    return redirect(f"/messages/{message_id}")
+    return redirect(request.form['redirect-location'])
 
 ##############################################################################
 # Homepage and error pages

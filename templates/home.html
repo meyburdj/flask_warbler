@@ -55,19 +55,19 @@
           <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
           <p>{{ msg.text }}</p>
           {% if g.user and g.user.id != msg.user.id%}
-          {% if g.user in msg.likers %}
-          <form action='/messages/{{ msg.id }}/unlike' method='POST'>
-            <button class='btn bi bi-star-fill'>
+          <form method='POST'>
+            {{ g.csrf_form.hidden_tag() }}
+            <input name='redirect-location' type='hidden' value='/'>
+            {% if g.user in msg.likers %}
+            <button formaction='/messages/{{ msg.id }}/unlike' class='btn'>
               <i class='bi bi-star-fill'></i>
             </button>
-          </form>
-          {% else %}
-          <form action='/messages/{{ msg.id }}/like' method='POST'>
-            <button class='btn bi bi-star'>
+            {% else %}
+            <button formaction='/messages/{{ msg.id }}/like' class='btn'>
               <i class='bi bi-star'></i>
             </button>
+            {% endif %}
           </form>
-          {% endif %}
           {% endif %}
         </div>
       </li>
