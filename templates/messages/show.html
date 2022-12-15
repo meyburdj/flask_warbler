@@ -43,7 +43,7 @@
           {% if g.user and g.user.id != message.user.id%}
           <form method='POST'>
             {{ g.redirect_form.hidden_tag() }}
-            {% if g.user in message.likers %}
+            {% if message.id in g.user_liked_messages %}
             <button formaction='/messages/{{ message.id }}/unlike' class='btn'>
               <i class='bi bi-star-fill'></i>
             </button>

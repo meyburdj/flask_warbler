@@ -50,10 +50,20 @@ def add_csrf_form_to_all_pages():
 
 @app.before_request
 def add_redirect_form_to_all_pages():
-    """ Before every route, add a hidden form that will 
+    """ Before every route, add a hidden form that will
     have that routes location for the sake of redirects """
 
     g.redirect_form = RedirectForm()
+
+@app.before_request
+def create_user_likes():
+    """ Before every route, populate a list of messages that the user
+    likes """
+
+    if CURR_USER_KEY in session:
+        g.user_liked_messages = {message.id for message in g.user.liked_messages}
+    else:
+        g.user_liked_messages = None
 
 
 def do_login(user):
@@ -301,10 +311,10 @@ def delete_user():
 def show_liked_messages(user_id):
     """ Show liked messages of user """
 
+    g.redirect_form.redirect_location.data = f'/users/{user_id}/likes'
     user = User.query.get_or_404(user_id)
 
-    return render_template('home.html', messages=user.liked_messages)
-    # TODO: make a new template for this specifically
+    return render_template('users/liked.html', messages=user.liked_messages)
 
 
 ##############################################################################
@@ -396,8 +406,8 @@ def unlike_message(message_id):
         msg.likers.remove(g.user)
         db.session.commit()
 
-    return redirect(form.redirect_location.data) 
-    
+    return redirect(form.redirect_location.data)
+
 
 ##############################################################################
 # Homepage and error pages
