@@ -8,7 +8,7 @@
 import os
 from unittest import TestCase
 
-from models import db, User, Message, Follows, connect_db
+from models import db, User, Message, Follows, connect_db, Like
 
 from sqlalchemy.exc import IntegrityError
 
@@ -53,6 +53,57 @@ class MessageModelTestCase(TestCase):
 
         db.session.rollback()
 
+
+
+    def test_new_message(self):
+        """ create a message instance and test it's properties """
+
+        u1 = User.query.get(self.u1_id)
+
+        new_message = Message(text = "This is a test message", user_id = u1.id)
+
+        db.session.add(new_message)
+        db.session.commit()
+
+        new_message_db = Message.query.get(new_message.id)
+
+        #testing message table
+        self.assertEqual(new_message_db, new_message)
+        self.assertEqual(new_message_db.text, "This is a test message")
+        
+
+        #testing user to message relationship
+        self.assertEqual(new_message_db.user, u1)
+        self.assertEqual(len(new_message_db.likers), 0)
+
+    def test_new_invalid_message(self):
+        """ Test creating messages with invalid inputs """
+
+        new_message_no_text = Message(text = None, user_id=self.u1_id)
+
+        with self.assertRaises(IntegrityError):
+            db.session.add(new_message_no_text)
+            db.session.commit()
+        db.session.rollback()
+
+        new_message_no_user = Message(text = "This is text", user_id=None)
+
+        with self.assertRaises(IntegrityError):
+            db.session.add(new_message_no_user)
+            db.session.commit()
+        db.session.rollback()
+
+        new_message_non_existent_user = Message(text = "This is also text", user_id=0)
+
+        with self.assertRaises(IntegrityError):
+            db.session.add(new_message_non_existent_user)
+            db.session.commit()
+        db.session.rollback()
+
+    
+
+
+
 #TODO:
 """
 - Test is_liked_by
@@ -62,6 +113,7 @@ class MessageModelTestCase(TestCase):
 - Test cascading delete?
     - Delete a user and all of their messages/likes should be gone
 """
+
 
     # def test_user_model(self):
     #     """ Test users created in setup """

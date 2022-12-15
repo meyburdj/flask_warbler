@@ -76,14 +76,17 @@ class UserModelTestCase(TestCase):
 
         u1 = User.query.get(self.u1_id)
         u2 = User.query.get(self.u2_id)
+        num_follows = len(Follows.query.all())
 
         self.assertFalse(u1.is_following(u2))
 
         u1.following.append(u2)
         db.session.commit()
+        num_follows_after = len(Follows.query.all())
 
         self.assertTrue(u1.is_following(u2))
         self.assertFalse(u2.is_following(u1))
+        self.assertEqual(num_follows+1, num_follows_after)
 
     def test_is_followed_by(self):
         """ Test the User.is_followed_by method """
@@ -187,6 +190,5 @@ class UserModelTestCase(TestCase):
 
 #TODO:
 """
-- Assert number of records in follows table after adding follow
 - Test cascading delete in follows table
 """
