@@ -177,7 +177,7 @@ class Message(db.Model):
     )
 
     def is_liked_by(self, user):
-        return user in self.users
+        return user in self.likers
 
 
 class Like(db.Model):
