@@ -35,6 +35,8 @@ db.create_all()
 
 class UserModelTestCase(TestCase):
     def setUp(self):
+        """ Set up before each test """
+
         User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
@@ -47,9 +49,13 @@ class UserModelTestCase(TestCase):
         self.client = app.test_client()
 
     def tearDown(self):
+        """ Tear down after each test """
+
         db.session.rollback()
 
     def test_user_model(self):
+        """ Test users created in setup """
+
         u1 = User.query.get(self.u1_id)
 
         # User should have no messages & no followers
@@ -57,15 +63,47 @@ class UserModelTestCase(TestCase):
         self.assertEqual(len(u1.followers), 0)
 
     def test_default_images(self):
+        """ Test population of default images on signup """
+
         u1 = User.query.get(self.u1_id)
-        
 
         #User should have the default images for both profile and header
         self.assertEqual(u1.image_url, DEFAULT_IMAGE_URL)
         self.assertEqual(u1.header_image_url, DEFAULT_HEADER_IMAGE_URL)
 
+    def test_is_following(self):
+        """ Test the User.is_following method """
+
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        self.assertFalse(u1.is_following(u2))
+
+        u1.following.append(u2)
+        db.session.commit()
+
+        self.assertTrue(u1.is_following(u2))
+        self.assertFalse(u2.is_following(u1))
+
+    def test_is_followed_by(self):
+        """ Test the User.is_followed_by method """
+
+        u1 = User.query.get(self.u1_id)
+        u2 = User.query.get(self.u2_id)
+
+        self.assertFalse(u1.is_followed_by(u2))
+
+        u1.followers.append(u2)
+        db.session.commit()
+
+        self.assertTrue(u1.is_followed_by(u2))
+        self.assertFalse(u2.is_followed_by(u1))
+
+
     def test_user_signup_method(self):
-        """ creates a user and tests that the user is created with the correct information """
+        """ creates a user and tests that the user is created
+        with the correct information """
+
         u3 = User.signup("u3", "u3@email.com", "password", None)
 
         db.session.commit()
@@ -77,35 +115,78 @@ class UserModelTestCase(TestCase):
         self.assertEqual(len(u3_in_db.followers), 0)
         self.assertEqual(len(u3_in_db.following), 0)
         self.assertEqual(len(u3_in_db.liked_messages), 0)
+        self.assertNotEqual('password', u3_in_db.password)
 
-    def test_user_signup_invalid_username(self):
-        """ creates a user that has a non-unique name and tests for failure """
+    def test_invalid_user_signups(self):
+        """ Test signing up users with invalid inputs """
 
+        # Test signup with repeat username
         u1_repeat_name = User.signup("u1", "not_u1@email.com", "password", None)
-        
 
         with self.assertRaises(IntegrityError):
             db.session.commit()
 
+        db.session.rollback()
+
+        # Test signup with repeat email
+        u1_repeat_email = User.signup("u1_diff", "u1@email.com", "password", None)
+
+        with self.assertRaises(IntegrityError):
+            db.session.commit()
+
+        db.session.rollback()
+
+        # Test signup with no username
+        u1_no_name = User.signup(None, "u1a@email.com", "password", None)
+
+        with self.assertRaises(IntegrityError):
+            db.session.commit()
+
+        db.session.rollback()
+
+        # Test signup with no email
+        u1_no_email = User.signup("not_u1", None, "password", None)
+
+        with self.assertRaises(IntegrityError):
+            db.session.commit()
+
+        db.session.rollback()
+
+        # Test signup with no email
+        u1_no_pwd = User(
+            username="really_not_u1",
+            email='wat@email.com',
+            password=None,
+            image_url=None)
+
+        with self.assertRaises(IntegrityError):
+            db.session.add(u1_no_pwd)
+            db.session.commit()
+
+        db.session.rollback()
 
 
+    def test_user_authenticate(self):
+        """ Test User.authenticate method """
 
+        # Test valid authenticate credentials
+        u1 = User.query.get(self.u1_id)
+        authenticated_user = User.authenticate('u1', 'password')
 
-#test that an invalid entry responds with an error 
-#error 1 user.signup = use of non-unique name
+        self.assertEqual(u1, authenticated_user)
 
+        # Invalid username
+        invalid_name_auth = User.authenticate('not_a_user', 'password')
 
-#error 2 = user of none entry in nullable=false
+        self.assertFalse(invalid_name_auth)
 
+        # Invalid password
+        invalid_pwd_auth = User.authenticate('u1', 'not_password')
 
+        self.assertFalse(invalid_pwd_auth)
 
-#test default image
-
-
-#test authenticate 
-
-
-#test is_followed_by
-
-
-#test is_following
+#TODO:
+"""
+- Assert number of records in follows table after adding follow
+- Test cascading delete in follows table
+"""
