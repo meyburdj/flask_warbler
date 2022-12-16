@@ -318,6 +318,10 @@ def delete_user():
 def show_liked_messages(user_id):
     """ Show liked messages of user """
 
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
     g.redirect_form.redirect_location.data = f'/users/{user_id}/likes'
     user = User.query.get_or_404(user_id)
 

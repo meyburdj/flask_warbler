@@ -10,6 +10,8 @@ from unittest import TestCase
 
 from models import db, Message, User, connect_db, Like, Follows, DEFAULT_HEADER_IMAGE_URL, DEFAULT_IMAGE_URL
 
+from flask import session
+
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
 # before we import our app, since that will have already
@@ -294,7 +296,7 @@ class UserDeleteViewTestCase(UserBaseViewTestCase):
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
-            self.assertIn('Join Warbler today.', html)
+            self.assertIn('<h2 class="join-message">Join Warbler today.</h2>', html)
             self.assertIn("User successfully deleted :(", html)
             self.assertIsNone(User.query.get(self.u1_id))
 
@@ -311,6 +313,70 @@ class UserDeleteViewTestCase(UserBaseViewTestCase):
             self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
             self.assertIn("Access unauthorized.", html)
 
+class UserLikesListTestCase(UserBaseViewTestCase):
+    """ Tests for listing a user's likes """
+
+    def test_user_likes_page(self):
+        """ Test GET to /users/<int:user_id>/likes """
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+            
+            m1 = Message.query.get(self.m1_id)
+            u1 = User.query.get(self.u1_id)
+            u1.liked_messages.append(m1)
+            db.session.commit()
+
+            resp = c.get(f"/users/{self.u1_id}/likes")
+            html = resp.get_data(as_text=True)
+
+
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('m1-text', html)
+
+class UserSignupTestCase(UserBaseViewTestCase):
+    """ Tests for when a user attempts to signup or visit the signup page """
+
+    def test_signup_page(self):
+        """ Test GET to /signup """
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.get("/signup")
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<h2 class="join-message">Join Warbler today.</h2>', html)
+            self.assertNotIn(CURR_USER_KEY, session)
+
+    def test_signup_submission(self):
+        """ Test POST to /signup """
+
+        with self.client as c:
+
+            d = {
+                "username": "test_4",
+                "password": "password",
+                "email": "test_4@email.com",
+                "image_url": ""
+            }
+
+            resp = c.post("/signup", data=d, follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            u4 = User.query.filter_by(username = "test_4").one()
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(session[CURR_USER_KEY], u4.id)
+            self.assertIn('<p>@test_4</p>', html)
+
+
+
+    
 
 
 
