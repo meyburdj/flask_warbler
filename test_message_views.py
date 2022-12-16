@@ -69,7 +69,8 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
     """ Add related views """
 
     def test_add_message(self):
-        """ Tests that when a user submits a new message while authorized, that the data is sent and that a redirect occurs """
+        """ Tests that when a user submits a new message while authorized,
+        that the data is sent and that a redirect occurs """
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id

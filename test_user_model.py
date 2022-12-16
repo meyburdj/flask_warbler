@@ -8,7 +8,8 @@
 import os
 from unittest import TestCase
 
-from models import db, User, Message, Follows, connect_db, DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL
+from models import (db, User, Message, Follows, connect_db,
+    DEFAULT_IMAGE_URL, DEFAULT_HEADER_IMAGE_URL)
 
 from sqlalchemy.exc import IntegrityError
 
@@ -82,7 +83,7 @@ class UserModelTestCase(TestCase):
 
         u1.following.append(u2)
         db.session.commit()
-        num_follows_after = len(Follows.query.all())
+        num_follows_after = len(Follows.query.all()) #Could use .query.count()
 
         self.assertTrue(u1.is_following(u2))
         self.assertFalse(u2.is_following(u1))
@@ -187,8 +188,3 @@ class UserModelTestCase(TestCase):
         invalid_pwd_auth = User.authenticate('u1', 'not_password')
 
         self.assertFalse(invalid_pwd_auth)
-
-#TODO:
-"""
-- Test cascading delete in follows table
-"""

@@ -61,7 +61,7 @@ def create_user_likes():
     likes """
 
     if CURR_USER_KEY in session:
-        g.user_liked_messages = {message.id for message in g.user.liked_messages}
+        g.user_liked_messages = {message.id for message in g.user.liked_messages} #g.user.liked_message_ids
     else:
         g.user_liked_messages = None
 

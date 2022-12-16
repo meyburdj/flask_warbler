@@ -121,7 +121,7 @@ class UserInfoViewTestCase(UserBaseViewTestCase):
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn('Here is the user profile page', html)
-            self.assertIn(f'<h4 id="sidebar-username">@u2</h4>', html)
+            self.assertIn('<h4 id="sidebar-username">@u2</h4>', html)
 
 
 class UserFollowViewTestCase(UserBaseViewTestCase):
