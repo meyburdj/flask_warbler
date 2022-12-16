@@ -66,6 +66,8 @@ class MessageBaseViewTestCase(TestCase):
 
 
 class MessageAddViewTestCase(MessageBaseViewTestCase):
+    """ Add related views """
+
     def test_add_message(self):
         """ Tests that when a user submits a new message while authorized, that the data is sent and that a redirect occurs """
         with self.client as c:
@@ -106,6 +108,7 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
             self.assertIn("Access unauthorized.", html)
 
+
     def test_show_message(self):
         """ Tests the messages/<message_id> route to display message if logged in """
         with self.client as c:
@@ -119,6 +122,8 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn('<p class="single-message">m1-text</p>', html)
 
+class MessageDeleteViewTestCase(MessageBaseViewTestCase):
+    """ Delete related views """
 
     def test_delete_message_proper_user(self):
         """ Test deletion of user's own message """
@@ -146,7 +151,7 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
 
             resp = c.post(f'/messages/{self.m1_id}/delete',
                 follow_redirects=True)
-            
+
             html = resp.get_data(as_text=True)
 
             self.assertEqual(resp.status_code, 200)
@@ -169,6 +174,8 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn('<p class="single-message">m1-text</p>', html)
             self.assertIn("Access unauthorized.", html)
 
+class MessageLikeViewTestCase(MessageBaseViewTestCase):
+    """ Like related views """
 
     def test_like_message(self):
         """ Test when user likes a message """
@@ -177,8 +184,8 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u2_id
 
-            resp = c.post(f'/messages/{self.m1_id}/like', 
-                data={"redirect_location":f"/messages/{self.m1_id}"}, 
+            resp = c.post(f'/messages/{self.m1_id}/like',
+                data={"redirect_location":f"/messages/{self.m1_id}"},
                 follow_redirects=True)
 
             html = resp.get_data(as_text=True)
@@ -215,5 +222,5 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn('<p class="single-message">m1-text</p>', html)
             self.assertNotIn(m1, u2_likes)
 
-            
+
 

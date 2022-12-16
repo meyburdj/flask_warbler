@@ -299,12 +299,19 @@ def delete_user():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    do_logout()
+    form = g.csrf_form
 
-    db.session.delete(g.user)
-    db.session.commit()
+    if form.validate_on_submit():
+        do_logout()
 
-    return redirect("/signup")
+        User.query.filter(User.id == g.user.id).delete()
+        db.session.commit()
+
+        flash('User successfully deleted :(', 'success')
+        return redirect("/signup")
+
+    flash('Access unauthorized', 'danger')
+    return redirect('/')
 
 
 @app.get('/users/<int:user_id>/likes')
