@@ -379,8 +379,8 @@ def delete_message(message_id):
 
             flash('Message successfully deleted.', 'success')
             return redirect(f"/users/{g.user.id}")
-
-    return redirect(f'/message/{message_id}')
+    flash("Access unauthorized.", "danger")
+    return redirect(f'/messages/{message_id}')
 
 @app.post('/messages/<int:message_id>/like')
 def like_message(message_id):

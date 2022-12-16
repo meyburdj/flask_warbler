@@ -8,7 +8,7 @@
 import os
 from unittest import TestCase
 
-from models import db, Message, User, connect_db
+from models import db, Message, User, connect_db, Like
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -47,6 +47,7 @@ class MessageBaseViewTestCase(TestCase):
         User.query.delete()
 
         u1 = User.signup("u1", "u1@email.com", "password", None)
+        u2 = User.signup("u2", "u2@email.com", "password", None)
         db.session.flush()
 
         m1 = Message(text="m1-text", user_id=u1.id)
@@ -54,6 +55,7 @@ class MessageBaseViewTestCase(TestCase):
         db.session.commit()
 
         self.u1_id = u1.id
+        self.u2_id = u2.id
         self.m1_id = m1.id
 
         self.client = app.test_client()
@@ -118,7 +120,7 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn('<p class="single-message">m1-text</p>', html)
 
 
-    def test_delete_message(self):
+    def test_delete_message_proper_user(self):
         """ Test deletion of user's own message """
         with self.client as c:
             with c.session_transaction() as sess:
@@ -136,3 +138,82 @@ class MessageAddViewTestCase(MessageBaseViewTestCase):
             self.assertIn('Here is the user profile page', html)
 
             self.assertIsNone(Message.query.get(self.m1_id))
+
+    def test_delete_message_no_user(self):
+        """ Test deletion of user's message if you are not logged in """
+
+        with self.client as c:
+
+            resp = c.post(f'/messages/{self.m1_id}/delete',
+                follow_redirects=True)
+            
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
+            self.assertIn("Access unauthorized.", html)
+
+    def test_delete_message_incorrect_user(self):
+        """ Test attempt to delete a message that is not the user's """
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u2_id
+
+            resp = c.post(f'/messages/{self.m1_id}/delete',
+                follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<p class="single-message">m1-text</p>', html)
+            self.assertIn("Access unauthorized.", html)
+
+
+    def test_like_message(self):
+        """ Test when user likes a message """
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u2_id
+
+            resp = c.post(f'/messages/{self.m1_id}/like', 
+                data={"redirect_location":f"/messages/{self.m1_id}"}, 
+                follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+
+            m1 = Message.query.get(self.m1_id)
+            u2_likes = User.query.get(self.u2_id).liked_messages
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<p class="single-message">m1-text</p>', html)
+            self.assertIn(m1, u2_likes)
+
+    def test_unliking_message(self):
+        """ Test when user unlikes a message """
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u2_id
+
+            liked_message = Like(user_id=self.u2_id, message_id=self.m1_id)
+
+            db.session.add(liked_message)
+            db.session.commit()
+
+            resp = c.post(f'/messages/{self.m1_id}/unlike',
+                data={"redirect_location":f"/messages/{self.m1_id}"},
+                follow_redirects=True)
+
+            html = resp.get_data(as_text=True)
+
+            m1 = Message.query.get(self.m1_id)
+            u2_likes = User.query.get(self.u2_id).liked_messages
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<p class="single-message">m1-text</p>', html)
+            self.assertNotIn(m1, u2_likes)
+
+            
+
