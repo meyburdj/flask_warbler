@@ -322,7 +322,7 @@ class UserLikesListTestCase(UserBaseViewTestCase):
         with self.client as c:
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.u1_id
-            
+
             m1 = Message.query.get(self.m1_id)
             u1 = User.query.get(self.u1_id)
             u1.liked_messages.append(m1)
@@ -330,8 +330,6 @@ class UserLikesListTestCase(UserBaseViewTestCase):
 
             resp = c.get(f"/users/{self.u1_id}/likes")
             html = resp.get_data(as_text=True)
-
-
 
             self.assertEqual(resp.status_code, 200)
             self.assertIn('m1-text', html)
@@ -374,161 +372,143 @@ class UserSignupTestCase(UserBaseViewTestCase):
             self.assertEqual(session[CURR_USER_KEY], u4.id)
             self.assertIn('<p>@test_4</p>', html)
 
+    def test_signup_submission_repeat_name(self):
+        """ Test POST to /signup with repeat username """
+
+        with self.client as c:
+
+            d = {
+                "username": "u1",
+                "password": "password",
+                "email": "test_4@email.com",
+                "image_url": ""
+            }
+
+            resp = c.post('/signup', data=d, follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Username already taken', html)
+            self.assertIn('<h2 class="join-message">Join Warbler today.</h2>', html)
+            self.assertNotIn(CURR_USER_KEY, session)
+
+class UserLoginViewTestCase(UserBaseViewTestCase):
+    """ Tests for when a user attempts to login or visit the login page """
+
+    def test_login_form(self):
+        """ Test GET to /login """
+
+        with self.client as c:
+            resp = c.get('/login')
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<h2 class="join-message">Welcome back.</h2>', html)
+            self.assertIn('<form method="POST" id="user_form">', html)
+
+    def test_login_submission(self):
+        """ Test POST to /login with valid credentials """
+
+        with self.client as c:
+            d = {
+                "username": "u1",
+                "password": "password",
+            }
+
+            resp = c.post('/login', data=d, follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("Hello, u1!", html)
+            self.assertIn('<p>@u1</p>', html)
+            self.assertIn('Here is the home page', html)
+            self.assertIn(CURR_USER_KEY, session)
+            self.assertEqual(session[CURR_USER_KEY], self.u1_id)
+
+    def test_invalid_pwd_login_submission(self):
+        """ Test POST to /login with invalid password """
+
+        with self.client as c:
+            d = {
+                "username": "u1",
+                "password": "pAsSwOrD",
+            }
+
+            resp = c.post('/login', data=d, follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<h2 class="join-message">Welcome back.</h2>', html)
+            self.assertIn('<form method="POST" id="user_form">', html)
+            self.assertIn('Invalid credentials', html)
+            self.assertNotIn(CURR_USER_KEY, session)
+
+    def test_invalid_user_login_submission(self):
+        """ Test POST to /login with invalid username """
+
+        with self.client as c:
+            d = {
+                "username": "u1000",
+                "password": "password",
+            }
+
+            resp = c.post('/login', data=d, follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('<h2 class="join-message">Welcome back.</h2>', html)
+            self.assertIn('<form method="POST" id="user_form">', html)
+            self.assertIn('Invalid credentials', html)
+            self.assertNotIn(CURR_USER_KEY, session)
 
 
-    
+class UserLogoutViewTestCase(UserBaseViewTestCase):
+    """ Tests for logging out a user """
+
+    def test_user_logout(self):
+        """ Test POST to /logout """
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
+
+            resp = c.post('/logout', follow_redirects=True)
+            html = resp.get_data(as_text=True)
+
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('You have been succesfully logged out!', html)
+            self.assertIn('<h2 class="join-message">Welcome back.</h2>', html)
+            self.assertIn('<form method="POST" id="user_form">', html)
+            self.assertNotIn(CURR_USER_KEY, session)
 
 
+class UserHomepageViewTestCase(UserBaseViewTestCase):
+    """ Tests for home page """
 
-# class UserAddViewTestCase(UserBaseViewTestCase):
-#     def test_add_message(self):
-#         """ Tests that when a user submits a new message while authorized, that the data is sent and that a redirect occurs """
-#         with self.client as c:
-#             with c.session_transaction() as sess:
-#                 sess[CURR_USER_KEY] = self.u1_id
+    def test_user_homepage(self):
+        """ Test homepage for logged in user """
 
-#             # Now, that session setting is saved, so we can have
-#             # the rest of ours test
-#             resp = c.post("/messages/new", data={"text": "Hello"})
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.u1_id
 
-#             self.assertEqual(resp.status_code, 302)
+            resp = c.get('/')
+            html = resp.get_data(as_text=True)
 
-#             Message.query.filter_by(text="Hello").one()
-
-#     def test_add_message_page(self):
-#         """ Tests the messages/new page to display form if logged in """
-#         with self.client as c:
-#             with c.session_transaction() as sess:
-#                 sess[CURR_USER_KEY] = self.u1_id
-
-#             resp = c.get("/messages/new")
-
-#             html = resp.get_data(as_text=True)
-
-#             self.assertEqual(resp.status_code, 200)
-
-#             self.assertIn('<button class="btn btn-outline-success">Add my message!</button>', html)
-
-#     def test_add_message_page_wo_auth(self):
-#         """ Tests the redirect if user tries to get the messages/new route without authorization """
-#         with self.client as c:
-
-#             resp = c.get("/messages/new", follow_redirects=True)
-
-#             html = resp.get_data(as_text=True)
-
-#             self.assertEqual(resp.status_code, 200)
-#             self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
-#             self.assertIn("Access unauthorized.", html)
-
-#     def test_show_message(self):
-#         """ Tests the messages/<message_id> route to display message if logged in """
-#         with self.client as c:
-#             with c.session_transaction() as sess:
-#                 sess[CURR_USER_KEY] = self.u1_id
-
-#             resp = c.get(f"/messages/{self.m1_id}")
-
-#             html = resp.get_data(as_text=True)
-
-#             self.assertEqual(resp.status_code, 200)
-#             self.assertIn('<p class="single-message">m1-text</p>', html)
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn('Here is the home page', html)
+            self.assertIn('<p>@u1</p>', html)
 
 
-#     def test_delete_message_proper_user(self):
-#         """ Test deletion of user's own message """
-#         with self.client as c:
-#             with c.session_transaction() as sess:
-#                 sess[CURR_USER_KEY] = self.u1_id
+    def test_user_homepage_logged_out(self):
+        """ Test homepage for logged out user """
 
-#             resp = c.post(
-#                 f'/messages/{self.m1_id}/delete',
-#                 follow_redirects=True
-#             )
+        with self.client as c:
+            resp = c.get('/')
+            html = resp.get_data(as_text=True)
 
-#             html = resp.get_data(as_text=True)
-
-#             self.assertEqual(resp.status_code, 200)
-#             self.assertIn('Message successfully deleted', html)
-#             self.assertIn('Here is the user profile page', html)
-
-#             self.assertIsNone(Message.query.get(self.m1_id))
-
-#     def test_delete_message_no_user(self):
-#         """ Test deletion of user's message if you are not logged in """
-
-#         with self.client as c:
-
-#             resp = c.post(f'/messages/{self.m1_id}/delete',
-#                 follow_redirects=True)
-
-#             html = resp.get_data(as_text=True)
-
-#             self.assertEqual(resp.status_code, 200)
-#             self.assertIn('<p>Sign up now to get your own personalized timeline!</p>', html)
-#             self.assertIn("Access unauthorized.", html)
-
-#     def test_delete_message_incorrect_user(self):
-#         """ Test attempt to delete a message that is not the user's """
-
-#         with self.client as c:
-#             with c.session_transaction() as sess:
-#                 sess[CURR_USER_KEY] = self.u2_id
-
-#             resp = c.post(f'/messages/{self.m1_id}/delete',
-#                 follow_redirects=True)
-
-#             html = resp.get_data(as_text=True)
-
-#             self.assertEqual(resp.status_code, 200)
-#             self.assertIn('<p class="single-message">m1-text</p>', html)
-#             self.assertIn("Access unauthorized.", html)
-
-
-#     def test_like_message(self):
-#         """ Test when user likes a message """
-
-#         with self.client as c:
-#             with c.session_transaction() as sess:
-#                 sess[CURR_USER_KEY] = self.u2_id
-
-#             resp = c.post(f'/messages/{self.m1_id}/like',
-#                 data={"redirect_location":f"/messages/{self.m1_id}"},
-#                 follow_redirects=True)
-
-#             html = resp.get_data(as_text=True)
-
-#             m1 = Message.query.get(self.m1_id)
-#             u2_likes = User.query.get(self.u2_id).liked_messages
-
-#             self.assertEqual(resp.status_code, 200)
-#             self.assertIn('<p class="single-message">m1-text</p>', html)
-#             self.assertIn(m1, u2_likes)
-
-#     def test_unliking_message(self):
-#         """ Test when user unlikes a message """
-
-#         with self.client as c:
-#             with c.session_transaction() as sess:
-#                 sess[CURR_USER_KEY] = self.u2_id
-
-#             liked_message = Like(user_id=self.u2_id, message_id=self.m1_id)
-
-#             db.session.add(liked_message)
-#             db.session.commit()
-
-#             resp = c.post(f'/messages/{self.m1_id}/unlike',
-#                 data={"redirect_location":f"/messages/{self.m1_id}"},
-#                 follow_redirects=True)
-
-#             html = resp.get_data(as_text=True)
-
-#             m1 = Message.query.get(self.m1_id)
-#             u2_likes = User.query.get(self.u2_id).liked_messages
-
-#             self.assertEqual(resp.status_code, 200)
-#             self.assertIn('<p class="single-message">m1-text</p>', html)
-#             self.assertNotIn(m1, u2_likes)
-
-
-
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn(
+                '<p>Sign up now to get your own personalized timeline!</p>',
+                html
+            )

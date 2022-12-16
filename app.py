@@ -151,9 +151,6 @@ def logout():
     flash("You have been succesfully logged out!")
     return redirect("/login")
 
-    # IMPLEMENT THIS AND FIX BUG
-    # DO NOT CHANGE METHOD ON ROUTE
-
 
 ##############################################################################
 # General user routes:
