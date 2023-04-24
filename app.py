@@ -120,16 +120,43 @@ def signup():
         return render_template('users/signup.html', form=form)
 
 
-@app.route('/login', methods=["GET", "POST"])
-def login():
-    """Handle user login and redirect to homepage on success."""
+# @app.route('/login', methods=["GET", "POST"])
+# def login():
+#     """Handle user login and redirect to homepage on success."""
 
-    print("session:", session)
-    print("session[CURR_USER_KEY]:", session.get(CURR_USER_KEY))
+#     print("session:", session)
+#     print("session[CURR_USER_KEY]:", session.get(CURR_USER_KEY))
+#     form = LoginForm()
+
+#     if form.validate_on_submit():
+#         print("I have validated the login form")    
+#         user = User.authenticate(
+#             form.username.data,
+#             form.password.data)
+
+#         if user:
+#             do_login(user)
+#             flash(f"Hello, {user.username}!", "success")
+#             return redirect("/")
+
+#         flash("Invalid credentials.", 'danger')
+#     print("I have entered the get portion of the login route")
+#     return render_template('users/login.html', form=form)
+
+@app.get('/login')
+def show_login_form():
+    """Show the login form."""
+
+    form = LoginForm()
+    return render_template('users/login.html', form=form)
+
+@app.post('/login')
+def handle_login_form():
+    """Handle the login form submission."""
+
     form = LoginForm()
 
     if form.validate_on_submit():
-        print("I have validated the login form")    
         user = User.authenticate(
             form.username.data,
             form.password.data)
@@ -140,8 +167,10 @@ def login():
             return redirect("/")
 
         flash("Invalid credentials.", 'danger')
-    print("I have entered the get portion of the login route")
-    return render_template('users/login.html', form=form)
+
+    return redirect("/login")
+
+
 
 
 @app.post('/logout')
