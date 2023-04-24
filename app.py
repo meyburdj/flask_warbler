@@ -47,6 +47,7 @@ def add_csrf_form_to_all_pages():
     """Before every route, add CSRF-only form to global object."""
 
     g.csrf_form = CSRFProtectForm()
+    print("CSRF Token:", g.csrf_form.csrf_token._value())
 
 @app.before_request
 def add_redirect_form_to_all_pages():
