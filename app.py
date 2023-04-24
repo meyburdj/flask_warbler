@@ -91,12 +91,14 @@ def signup():
     If the there already is a user with that username: flash message
     and re-present form.
     """
-
+    print("session:", session)
+    print("session[CURR_USER_KEY]:", session[CURR_USER_KEY])
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
     form = UserAddForm()
 
     if form.validate_on_submit():
+        print("I have validated the signup form")    
         try:
             user = User.signup(
                 username=form.username.data,
@@ -115,6 +117,7 @@ def signup():
         return redirect("/")
 
     else:
+        print("I have entered the get portion of the signup route")
         return render_template('users/signup.html', form=form)
 
 
@@ -122,9 +125,12 @@ def signup():
 def login():
     """Handle user login and redirect to homepage on success."""
 
+    print("session:", session)
+    print("session[CURR_USER_KEY]:", session[CURR_USER_KEY])
     form = LoginForm()
 
     if form.validate_on_submit():
+        print("I have validated the login form")    
         user = User.authenticate(
             form.username.data,
             form.password.data)
@@ -135,7 +141,7 @@ def login():
             return redirect("/")
 
         flash("Invalid credentials.", 'danger')
-
+    print("I have entered the get portion of the login route")
     return render_template('users/login.html', form=form)
 
 
@@ -146,6 +152,7 @@ def logout():
     form = g.csrf_form
 
     if form.validate_on_submit():
+        print("I have validated the logout form")
         do_logout()
 
     flash("You have been succesfully logged out!")
