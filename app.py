@@ -147,6 +147,7 @@ def signup():
 def show_login_form():
     """Show the login form."""
 
+    print("I am in the get login route")
     form = LoginForm()
     return render_template('users/login.html', form=form)
 
@@ -154,6 +155,7 @@ def show_login_form():
 def handle_login_form():
     """Handle the login form submission."""
 
+    print("I am in the post login route")
     form = LoginForm()
 
     if form.validate_on_submit():
