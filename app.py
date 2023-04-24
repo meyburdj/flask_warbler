@@ -91,8 +91,7 @@ def signup():
     If the there already is a user with that username: flash message
     and re-present form.
     """
-    print("session:", session)
-    print("session[CURR_USER_KEY]:", session[CURR_USER_KEY])
+
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
     form = UserAddForm()
@@ -128,6 +127,8 @@ def login():
     print("session:", session)
     print("session[CURR_USER_KEY]:", session[CURR_USER_KEY])
     form = LoginForm()
+
+    print("i actually can log")
 
     if form.validate_on_submit():
         print("I have validated the login form")    
