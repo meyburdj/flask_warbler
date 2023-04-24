@@ -157,8 +157,10 @@ def handle_login_form():
 
     print("I am in the post login route")
     form = LoginForm()
+    print("there is actually a form here", form)
 
     if form.validate_on_submit():
+        print("I have validated_on_submit")
         user = User.authenticate(
             form.username.data,
             form.password.data)
