@@ -91,7 +91,7 @@ def signup():
     If the there already is a user with that username: flash message
     and re-present form.
     """
-
+    print("i actually can log")
     if CURR_USER_KEY in session:
         del session[CURR_USER_KEY]
     form = UserAddForm()
@@ -123,6 +123,8 @@ def login():
     """Handle user login and redirect to homepage on success."""
 
     form = LoginForm()
+
+    print("i actually can log")
 
     if form.validate_on_submit():
         user = User.authenticate(
