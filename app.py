@@ -125,10 +125,8 @@ def login():
     """Handle user login and redirect to homepage on success."""
 
     print("session:", session)
-    print("session[CURR_USER_KEY]:", session[CURR_USER_KEY])
+    print("session[CURR_USER_KEY]:", session.get(CURR_USER_KEY))
     form = LoginForm()
-
-    print("i actually can log")
 
     if form.validate_on_submit():
         print("I have validated the login form")    
