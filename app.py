@@ -160,6 +160,7 @@ def handle_login_form():
     print("there is actually a form here", form)
 
     if form.validate_on_submit():
+        
         print("I have validated_on_submit")
         user = User.authenticate(
             form.username.data,
@@ -171,6 +172,7 @@ def handle_login_form():
             return redirect("/")
 
         flash("Invalid credentials.", 'danger')
+    print("form errors", form.errors)
 
     return redirect("/login")
 
